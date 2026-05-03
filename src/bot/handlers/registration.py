@@ -21,6 +21,7 @@ class RegState(StatesGroup):
     experience = State()
     additional_info = State()
     days = State()
+    consent = State()
     source = State()
 
 # ==========================================
@@ -213,14 +214,30 @@ async def process_days(callback: CallbackQuery, state: FSMContext):
         days_db = "Обидва"
         
     await state.update_data(days=days_db)
-    
+    # Перед фінальним кроком питаємо згоду на передачу даних компаніям
+    consent_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="погоджуюсь", callback_data="consent_accept")]
+    ])
+    await callback.message.edit_text(
+        "Чи ви погоджуєтесь що ваші данні будуть передані компаніям які беруть участь в Ярмарку Кар'єри",
+        reply_markup=consent_kb
+    )
+    await state.set_state(RegState.consent)
+
+
+# Обробник підтвердження згоди -> показати варіанти, звідки дізналися (source)
+@router.callback_query(RegState.consent, F.data == "consent_accept")
+async def process_consent(callback: CallbackQuery, state: FSMContext):
+    # Показуємо ті самі опції, що й раніше для source
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📸 Інстаграм", callback_data="src_Instagram"), InlineKeyboardButton(text="✈️ Телеграм", callback_data="src_Telegram")],
         [InlineKeyboardButton(text="🗣 Друзі", callback_data="src_Friends"), InlineKeyboardButton(text="📄 Оголошення", callback_data="src_Ads")],
         [InlineKeyboardButton(text="👨‍🏫 Викладачі", callback_data="src_Teachers")]
     ])
+
     await callback.message.edit_text("Звідки дізналися:", reply_markup=kb)
     await state.set_state(RegState.source)
+    await callback.answer()
 
 # 9. Фініш та збереження в БД
 @router.callback_query(RegState.source, F.data.startswith("src_"))
