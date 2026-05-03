@@ -33,8 +33,7 @@ async def cmd_start(message: Message, state: FSMContext):
     
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="ℹ️ Загальна інформація", callback_data="menu_info")],
-        [InlineKeyboardButton(text="📋 Реєстрація", callback_data="menu_reg")],
-        [InlineKeyboardButton(text="👨‍💻 Організатори", callback_data="menu_org")]
+        [InlineKeyboardButton(text="📋 Реєстрація", callback_data="menu_reg")]
     ])
     
     text = (
@@ -52,12 +51,20 @@ async def cmd_start(message: Message, state: FSMContext):
 # --- КНОПКИ ГОЛОВНОГО МЕНЮ ---
 @router.callback_query(F.data == "menu_info")
 async def show_info(callback: CallbackQuery):
-    await callback.message.answer("Коротко про Ярмарок Кар'єри від PR. Більш детальна інформація про Ярмарок Кар'єри розміщена на сайті: ")
+    # Використовуємо markdown-посилання в тексті
+    await callback.message.answer(
+        "Коротко про Ярмарок Кар'єри від PR. Більш детальна інформація розміщена на [сайт](https://jf.best-vinnytsia.org/)",
+        parse_mode="Markdown"
+    )
     await callback.answer()
 
 @router.callback_query(F.data == "menu_org")
 async def show_org(callback: CallbackQuery):
-    await callback.message.answer("Інформація про Core Team i BEST.\nПосилання на сайт: ")
+    # Цей хендлер більше недоступний з меню (кнопка була видалена), але залишився для сумісності
+    await callback.message.answer(
+        "Інформація про Core Team і BEST. Деталі на [сайт](https://jf.best-vinnytsia.org/)",
+        parse_mode="Markdown"
+    )
     await callback.answer()
 
 
@@ -219,8 +226,10 @@ async def process_days(callback: CallbackQuery, state: FSMContext):
         [InlineKeyboardButton(text="погоджуюсь", callback_data="consent_accept")]
     ])
     await callback.message.edit_text(
-        "Чи ви погоджуєтесь що ваші данні будуть передані компаніям які беруть участь в Ярмарку Кар'єри",
-        reply_markup=consent_kb
+        "Чи ви погоджуєтесь, що ваші дані будуть передані компаніям, які беруть участь в Ярмарку Кар'єри? "
+        "Деталі обробки персональних даних — на [політиці конфіденційності](https://zakon.rada.gov.ua/laws/show/privacy)",
+        reply_markup=consent_kb,
+        parse_mode="Markdown"
     )
     await state.set_state(RegState.consent)
 
