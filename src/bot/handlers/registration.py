@@ -53,7 +53,7 @@ async def cmd_start(message: Message, state: FSMContext):
 async def show_info(callback: CallbackQuery):
     # Використовуємо markdown-посилання в тексті
     await callback.message.answer(
-        "Коротко про Ярмарок Кар'єри розміщена на [сайт](https://jf.best-vinnytsia.org/)",
+        "Інформація про Ярмарок Кар'єри розміщена на [сайті](https://jf.best-vinnytsia.org/)",
         parse_mode="Markdown"
     )
     await callback.answer()
