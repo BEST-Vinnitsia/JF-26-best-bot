@@ -186,14 +186,36 @@ async def process_exp_msg(message: Message, state: FSMContext):
     # Зберігаємо текст або ID файлу, якщо кинули PDF
     exp_data = message.document.file_id if message.document else message.text
     await state.update_data(experience=exp_data)
-    await message.answer("Додаткова інформація, яку розповів б компаніям:")
+    # Додаємо кнопку "Пропустити" для кроку додаткової інформації
+    addinfo_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Пропустити", callback_data="addinfo_skip")]
+    ])
+    await message.answer("Додаткова інформація, яку розповів б компаніям:", reply_markup=addinfo_kb)
     await state.set_state(RegState.additional_info)
 
 @router.callback_query(RegState.experience, F.data == "exp_skip")
 async def process_exp_skip(callback: CallbackQuery, state: FSMContext):
     await state.update_data(experience="Немає")
-    await callback.message.edit_text("Додаткова інформація, яку розповів б компаніям:")
+    # Показуємо той самий текст із кнопкою пропустити
+    addinfo_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Пропустити", callback_data="addinfo_skip")]
+    ])
+    await callback.message.edit_text("Додаткова інформація, яку розповів б компаніям:", reply_markup=addinfo_kb)
     await state.set_state(RegState.additional_info)
+
+
+@router.callback_query(RegState.additional_info, F.data == "addinfo_skip")
+async def process_addinfo_skip(callback: CallbackQuery, state: FSMContext):
+    # Зберігаємо у базі, що додаткової інформації немає (можна '-' або порожнє)
+    await state.update_data(additional_info="-")
+    # Показати вибір днів
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="День 1", callback_data="days_1"), InlineKeyboardButton(text="День 2", callback_data="days_2")],
+        [InlineKeyboardButton(text="Всі 🔥", callback_data="days_all")]
+    ])
+    await callback.message.edit_text("Дні події на які прийдеш:", reply_markup=kb)
+    await state.set_state(RegState.days)
+    await callback.answer()
 
 # 7. Дод. інфа -> Дні
 @router.message(RegState.additional_info, F.text)
